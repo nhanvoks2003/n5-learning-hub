@@ -1,7 +1,7 @@
 import React from 'react';
-import { LayoutDashboard, Layers, Play, Sparkles, Trophy, Bolt, HelpCircle, LogOut } from 'lucide-react';
+import { LayoutDashboard, Layers, Play, Sparkles, Trophy, HelpCircle, LogOut } from 'lucide-react';
 
-function Sidebar({ currentTab, setCurrentTab, progressPercent }) {
+function Sidebar({ currentTab, setCurrentTab, progressPercent, handleSignOut }) {
   const logoUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAawmpoMSxxLa9dVVXHych4boW8JP6egRdrHBWXl9P8pTCNLcoxXr8jF32DHZCR7T0kfPiLWXIrQ9eB5aWlRhS_bLGQCvtEBLa4RclNfYPWRsMnMPGWsnpH-O-7wBJm28mkkLj6vPLTcVFZvgk9iOXQAXH9dkABiVsiS8M1g0_p0twF_Em9o1xhEoGgfmJEbBb48SOHALPKmBQ5Gyl4YF7xu7GsY6jIjW_cVIFrgemCo7Lu3kYD0vF5";
 
   return (
@@ -41,7 +41,7 @@ function Sidebar({ currentTab, setCurrentTab, progressPercent }) {
         </button>
         <div className="border-t border-white/5 pt-3 flex flex-col gap-1">
           <a className="text-slate-500 px-4 py-1.5 flex items-center gap-2.5 hover:text-sky-400 transition-all text-xs font-mono" href="#"><HelpCircle className="w-4 h-4" /> Help</a>
-          <a className="text-slate-500 px-4 py-1.5 flex items-center gap-2.5 hover:text-red-400 transition-all text-xs font-mono" href="#"><LogOut className="w-4 h-4" /> Sign Out</a>
+          <button onClick={handleSignOut} className="text-slate-500 px-4 py-1.5 flex items-center gap-2.5 hover:text-red-400 transition-all text-xs font-mono text-left w-full"><LogOut className="w-4 h-4" /> Sign Out</button>
         </div>
       </div>
     </aside>

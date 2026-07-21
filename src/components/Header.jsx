@@ -1,8 +1,11 @@
 import React from 'react';
-import { Search, Bell, Settings } from 'lucide-react';
+import { Search, Bell, Settings, ShieldAlert, LogIn, LogOut, User } from 'lucide-react';
 
-function Header({ currentTab, setCurrentTab }) {
+function Header({ currentTab, setCurrentTab, user, openAuthModal, handleSignOut }) {
   const logoUrl = "https://lh3.googleusercontent.com/aida-public/AB6AXuAawmpoMSxxLa9dVVXHych4boW8JP6egRdrHBWXl9P8pTCNLcoxXr8jF32DHZCR7T0kfPiLWXIrQ9eB5aWlRhS_bLGQCvtEBLa4RclNfYPWRsMnMPGWsnpH-O-7wBJm28mkkLj6vPLTcVFZvgk9iOXQAXH9dkABiVsiS8M1g0_p0twF_Em9o1xhEoGgfmJEbBb48SOHALPKmBQ5Gyl4YF7xu7GsY6jIjW_cVIFrgemCo7Lu3kYD0vF5";
+
+  // Lấy ký tự đầu tiên của email làm Avatar
+  const userInitial = user?.email ? user.email.charAt(0).toUpperCase() : 'N';
 
   return (
     <header className="sticky top-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-[#0b1326]/30 backdrop-blur-xl border-b border-white/10 shadow-[0_0_30px_rgba(137,206,255,0.1)]">
@@ -17,6 +20,7 @@ function Header({ currentTab, setCurrentTab }) {
           <button onClick={() => setCurrentTab('lessons')} className={`text-sm font-bold pb-1 transition-all ${currentTab === 'lessons' ? 'text-sky-400 border-b-2 border-sky-400' : 'text-slate-400 hover:text-slate-200'}`}>Video Lessons</button>
           <button onClick={() => setCurrentTab('flashcards')} className={`text-sm font-bold pb-1 transition-all ${currentTab === 'flashcards' ? 'text-sky-400 border-b-2 border-sky-400' : 'text-slate-400 hover:text-slate-200'}`}>Kanji Mastery</button>
           <button onClick={() => setCurrentTab('leaderboard')} className={`text-sm font-bold pb-1 transition-all ${currentTab === 'leaderboard' ? 'text-sky-400 border-b-2 border-sky-400' : 'text-slate-400 hover:text-slate-200'}`}>Leaderboard</button>
+          <button onClick={() => setCurrentTab('admin')} className={`text-sm font-bold pb-1 transition-all flex items-center gap-1 ${currentTab === 'admin' ? 'text-amber-400 border-b-2 border-amber-400' : 'text-amber-500/70 hover:text-amber-400'}`}><ShieldAlert className="w-3.5 h-3.5" /> Admin Panel</button>
         </nav>
       </div>
 
@@ -26,10 +30,33 @@ function Header({ currentTab, setCurrentTab }) {
           <input type="text" placeholder="Quick search..." className="bg-transparent border-none text-xs text-on-surface placeholder:text-slate-500 focus:outline-none w-48"/>
         </div>
         <button className="text-slate-400 hover:bg-white/5 p-2 rounded-full transition-colors"><Bell className="w-4 h-4" /></button>
-        <button className="text-slate-400 hover:bg-white/5 p-2 rounded-full transition-colors"><Settings className="w-4 h-4" /></button>
-        <div className="w-9 h-9 rounded-full border border-sky-500/30 overflow-hidden">
-          <div className="w-full h-full bg-linear-to-tr from-sky-400 to-emerald-400 flex items-center justify-center text-xs font-black text-[#0b1326]">N</div>
-        </div>
+        <button onClick={() => setCurrentTab('admin')} title="Admin Settings" className="text-slate-400 hover:bg-white/5 p-2 rounded-full transition-colors"><Settings className="w-4 h-4" /></button>
+        
+        {/* NÚT TÀI KHOẢN HOẶC ĐĂNG NHẬP */}
+        {user ? (
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full border border-sky-500/30 overflow-hidden" title={user.email}>
+              <div className="w-full h-full bg-linear-to-tr from-sky-400 to-emerald-400 flex items-center justify-center text-xs font-black text-[#0b1326]">
+                {userInitial}
+              </div>
+            </div>
+            <button 
+              onClick={handleSignOut}
+              title="Đăng xuất"
+              className="text-slate-400 hover:text-red-400 hover:bg-red-500/10 p-2 rounded-full transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        ) : (
+          <button 
+            onClick={openAuthModal}
+            className="flex items-center gap-1.5 px-4 py-2 bg-sky-500/10 border border-sky-500/30 text-sky-400 hover:bg-sky-500 hover:text-[#0b1326] text-xs font-bold rounded-xl transition-all shadow-md active:scale-95"
+          >
+            <LogIn className="w-3.5 h-3.5" /> Đăng nhập
+          </button>
+        )}
+
       </div>
     </header>
   );
