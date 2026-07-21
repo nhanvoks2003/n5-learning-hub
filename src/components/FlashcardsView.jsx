@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Sparkles, Volume2, Star, Brain, RotateCw } from 'lucide-react';
+import { speakJapanese } from '../utils/speech';
 
 function FlashcardsView({ kanjiDeck, vocabList }) {
   // Trạng thái lưu thẻ nào đang được lật mặt sau
@@ -51,7 +52,7 @@ function FlashcardsView({ kanjiDeck, vocabList }) {
         </div>
       </div>
 
-      {/* DAILY REVIEW DECK - THẺ FLASHCARD LẬT 3D */}
+      {/* DAILY REVIEW DECK - THẺ FLASHCARD LẬT 3D + PHÁT ÂM */}
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -73,9 +74,20 @@ function FlashcardsView({ kanjiDeck, vocabList }) {
                   
                   {/* MẶT TRƯỚC (FRONT) */}
                   <div className="absolute inset-0 w-full h-full bg-[#171f33]/50 border border-white/10 rounded-2xl p-5 flex flex-col items-center justify-between [backface-visibility:hidden] shadow-xl backdrop-blur-md group-hover:border-sky-500/50 transition-colors">
-                    <span className={`self-end ${kanji.bg || 'bg-sky-500/10'} ${kanji.color || 'text-sky-400'} border ${kanji.border || 'border-sky-500/20'} text-[9px] font-mono font-black px-2 py-0.5 rounded-full`}>
-                      {kanji.level || 'N5'}
-                    </span>
+                    <div className="w-full flex justify-between items-center">
+                      {/* NÚT LOA PHÁT ÂM KANJI */}
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); speakJapanese(kanji.char); }}
+                        title="Nghe phát âm"
+                        className="text-slate-500 hover:text-sky-400 p-1 rounded-lg hover:bg-white/10 transition-colors"
+                      >
+                        <Volume2 className="w-4 h-4" />
+                      </button>
+                      <span className={`self-end ${kanji.bg || 'bg-sky-500/10'} ${kanji.color || 'text-sky-400'} border ${kanji.border || 'border-sky-500/20'} text-[9px] font-mono font-black px-2 py-0.5 rounded-full`}>
+                        {kanji.level || 'N5'}
+                      </span>
+                    </div>
+                    
                     <div className="text-center my-auto">
                       <span className="text-6xl font-black text-white group-hover:text-sky-400 transition-colors select-none">
                         {kanji.char}
@@ -114,7 +126,7 @@ function FlashcardsView({ kanjiDeck, vocabList }) {
         </div>
       </div>
 
-      {/* RECENT VOCABULARY */}
+      {/* RECENT VOCABULARY + PHÁT ÂM */}
       <div className="space-y-5">
         <h2 className="text-lg font-extrabold text-white tracking-wide">Recent Vocabulary</h2>
         <div className="space-y-3">
@@ -133,7 +145,14 @@ function FlashcardsView({ kanjiDeck, vocabList }) {
                 </div>
               </div>
               <div className="flex gap-3 text-slate-500">
-                <button onClick={() => alert('Phát âm thanh...')} className="hover:text-sky-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors"><Volume2 className="w-4 h-4" /></button>
+                {/* NÚT PHÁT ÂM TỪ VỰNG DÙNG WEB SPEECH API */}
+                <button 
+                  onClick={() => speakJapanese(vocab.kanji)} 
+                  title="Phát âm tiếng Nhật"
+                  className="hover:text-sky-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors active:scale-90"
+                >
+                  <Volume2 className="w-4 h-4 text-sky-400" />
+                </button>
                 <button className="hover:text-amber-400 p-1.5 rounded-lg hover:bg-white/5 transition-colors"><Star className="w-4 h-4" /></button>
               </div>
             </div>
