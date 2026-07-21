@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Play, Save, Circle, CheckCircle2, BookOpen, ChevronRight, Brain, Flame } from 'lucide-react';
+import { FileText, Play, Save, Circle, CheckCircle2, ChevronRight, Brain, Flame, Sparkles } from 'lucide-react';
 
 function LessonsView({ 
   lessons, 
@@ -11,7 +11,8 @@ function LessonsView({
   saveNotes, 
   savingNotes, 
   activeNotesTab, 
-  setActiveNotesTab 
+  setActiveNotesTab,
+  setCurrentTab // <-- NHẬN HÀM CHUYỂN TAB TẠI ĐÂY
 }) {
   return (
     <div className="flex flex-col lg:flex-row gap-6 animate-fade-in">
@@ -88,12 +89,49 @@ function LessonsView({
                 </div>
               </div>
 
-              {/* RESOURCE SIDEBAR RIGHT */}
+              {/* RESOURCE SIDEBAR RIGHT - ĐÃ GẮN ONCLICK CHUYỂN TAB */}
               <div className="xl:col-span-4 space-y-6">
                 <div className="bg-[#171f33]/40 border border-white/5 p-5 rounded-2xl shadow-xl space-y-4">
                   <h3 className="font-bold text-xs text-white uppercase tracking-wider">Resources Tài Liệu</h3>
-                  <div className="space-y-2"><div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5"><div className="flex items-center gap-3"><div className="w-8 h-8 rounded-lg bg-[#4edea3]/10 flex items-center justify-center text-[#4edea3]"><Sparkles className="w-4 h-4" /></div><div><p className="text-xs font-bold text-white">Vocabulary Deck</p><p className="text-[10px] text-slate-500">45 Từ vựng mới</p></div></div><ChevronRight className="w-4 h-4 text-slate-500" /></div></div>
+                  <div className="space-y-2.5">
+                    
+                    {/* THẺ 1: BẤM LÀ SANG TẬN NƠI KANJI & VOCABULARY */}
+                    <div 
+                      onClick={() => setCurrentTab('flashcards')}
+                      className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:border-sky-500/30 hover:bg-sky-500/5 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-[#4edea3]/10 flex items-center justify-center text-[#4edea3]">
+                          <Sparkles className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-sky-400 transition-colors">Vocabulary Deck</p>
+                          <p className="text-[10px] text-slate-500">Bộ 45 Từ vựng JLPT N5</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                    </div>
+
+                    {/* THẺ 2: BẤM CŨNG CHUYỂN SANG KANJI MASTERY */}
+                    <div 
+                      onClick={() => setCurrentTab('flashcards')}
+                      className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-white/5 hover:border-sky-500/30 hover:bg-sky-500/5 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center text-sky-400">
+                          <Brain className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-sky-400 transition-colors">Kanji Precision Deck</p>
+                          <p className="text-[10px] text-slate-500">Thẻ Flashcard 3D Lật MẶT</p>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-slate-500 group-hover:translate-x-1 transition-transform" />
+                    </div>
+
+                  </div>
                 </div>
+
                 <div className="bg-[#171f33]/40 border border-white/5 p-5 rounded-2xl shadow-xl bg-gradient-to-br from-sky-500/5 to-transparent border-sky-500/10">
                   <div className="flex justify-between items-center mb-2"><span className="text-[10px] font-mono tracking-widest text-sky-400 font-bold uppercase">Streak Status</span><div className="flex items-center gap-1 text-[#4edea3] font-mono font-bold text-xs"><Flame className="w-4 h-4 fill-[#4edea3]" /> 12 DAYS</div></div>
                   <div className="flex gap-1 mt-3"><div className="h-1 flex-1 bg-[#4edea3] rounded-full shadow-[0_0_8px_rgba(78,222,163,0.5)]"></div><div className="h-1 flex-1 bg-[#4edea3] rounded-full shadow-[0_0_8px_rgba(78,222,163,0.5)]"></div><div className="h-1 flex-1 bg-[#4edea3] rounded-full shadow-[0_0_8px_rgba(78,222,163,0.5)]"></div><div className="h-1 flex-1 bg-white/10 rounded-full"></div></div>

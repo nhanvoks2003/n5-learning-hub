@@ -122,12 +122,13 @@ function App() {
           )}
 
           {currentTab === 'lessons' && (
-            <LessonsView 
-              lessons={lessons} selectedLesson={selectedLesson} handleSelectLesson={handleSelectLesson}
-              toggleStatus={toggleStatus} notes={notes} setNotes={setNotes} saveNotes={saveNotes}
-              savingNotes={savingNotes} activeNotesTab={activeNotesTab} setActiveNotesTab={setActiveNotesTab}
-            />
-          )}
+  <LessonsView 
+    lessons={lessons} selectedLesson={selectedLesson} handleSelectLesson={handleSelectLesson}
+    toggleStatus={toggleStatus} notes={notes} setNotes={setNotes} saveNotes={saveNotes}
+    savingNotes={savingNotes} activeNotesTab={activeNotesTab} setActiveNotesTab={setActiveNotesTab}
+    setCurrentTab={setCurrentTab} // <-- TRUYỀN HÀM NÀY VÀO
+  />
+)}
 
           {currentTab === 'flashcards' && (
             <FlashcardsView kanjiDeck={kanjiDeck} vocabList={vocabList} />
