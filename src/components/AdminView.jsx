@@ -48,7 +48,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
   // Forms
   const [lessonForm, setLessonForm] = useState({ lesson_name: '', week: 'WEEK 1', description: '', youtube_embed_id: '' });
   const [kanjiForm, setKanjiForm] = useState({ char: '', trans: '', onyomi: '', level: 'LVL 1' });
-  const [vocabForm, setVocabForm] = useState({ kanji: '', romaji: '', english: '', stage: 'GROWING' });
+  const [vocabForm, setVocabForm] = useState({ kanji: '', romaji: '', english: '', week: 'WEEK 1', stage: 'GROWING' });
 
   const handleCancelEdit = () => {
     setEditingLessonId(null);
@@ -56,7 +56,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
     setEditingVocabId(null);
     setLessonForm({ lesson_name: '', week: 'WEEK 1', description: '', youtube_embed_id: '' });
     setKanjiForm({ char: '', trans: '', onyomi: '', level: 'LVL 1' });
-    setVocabForm({ kanji: '', romaji: '', english: '', stage: 'GROWING' });
+    setVocabForm({ kanji: '', romaji: '', english: '', week: 'WEEK 1', stage: 'GROWING' });
   };
 
   // ---------------- 1. XỬ LÝ BÀI HỌC (LESSONS) ----------------
@@ -75,7 +75,6 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
     if (!lessonForm.lesson_name) return;
 
     if (editingLessonId) {
-      // ĐANG Ở CHẾ ĐỘ SỬA
       const updatedList = localLessons.map(l => {
         if ((l.id && l.id === editingLessonId) || (l.temp_id && l.temp_id === editingLessonId)) {
           return { ...l, ...lessonForm, is_edited: !l.is_new };
@@ -105,7 +104,6 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
       });
       handleCancelEdit();
     } else {
-      // CHẾ ĐỘ THÊM MỚI
       const newItem = { ...lessonForm, temp_id: 'temp_' + Date.now(), status: false, is_new: true };
       setLocalLessons([newItem, ...localLessons]);
       setPendingChanges(prev => ({
@@ -218,6 +216,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
       kanji: item.kanji,
       romaji: item.romaji,
       english: item.english || '',
+      week: item.week || 'WEEK 1',
       stage: item.stage || 'GROWING',
     });
   };
@@ -262,7 +261,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
         ...prev,
         vocab: { ...prev.vocab, insert: [newItem, ...prev.vocab.insert] }
       }));
-      setVocabForm({ kanji: '', romaji: '', english: '', stage: 'GROWING' });
+      setVocabForm({ kanji: '', romaji: '', english: '', week: 'WEEK 1', stage: 'GROWING' });
     }
   };
 
@@ -445,7 +444,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
                   type="text" placeholder="VD: WEEK 1" 
                   value={lessonForm.week}
                   onChange={(e) => setLessonForm({ ...lessonForm, week: e.target.value })}
-                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400"
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400 font-mono"
                 />
               </div>
               <div>
@@ -648,6 +647,15 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
                   className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400"
                 />
               </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Phân loại Tuần (*)</label>
+                <input 
+                  type="text" required placeholder="VD: WEEK 1" 
+                  value={vocabForm.week}
+                  onChange={(e) => setVocabForm({ ...vocabForm, week: e.target.value })}
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400 font-mono"
+                />
+              </div>
               <button 
                 type="submit" 
                 className={`w-full py-3 font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-98 flex items-center justify-center gap-2 ${
@@ -669,12 +677,15 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
 
                 return (
                   <div key={itemId || idx} className={`p-4 flex items-center justify-between gap-4 transition-colors ${isEditing ? 'bg-amber-500/10 border-l-4 border-amber-400' : item.is_new ? 'bg-emerald-500/5 border-l-4 border-emerald-400' : item.is_edited ? 'bg-sky-500/5 border-l-4 border-sky-400' : 'hover:bg-white/5'}`}>
-                    <div>
-                      <span className="text-sm font-black text-white">{item.kanji}</span>
-                      <span className="text-xs font-bold text-sky-400 ml-3">{item.romaji}</span>
-                      {item.is_new && <span className="ml-2 text-[9px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded font-mono">Chưa lưu</span>}
-                      {item.is_edited && <span className="ml-2 text-[9px] font-bold text-sky-400 bg-sky-500/20 px-1.5 py-0.5 rounded font-mono">Đã sửa</span>}
-                      <p className="text-[10px] text-slate-500 mt-0.5">{item.english}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono font-bold text-sky-400 px-1.5 py-0.5 bg-sky-500/10 rounded">{item.week || 'WEEK 1'}</span>
+                        <span className="text-sm font-black text-white">{item.kanji}</span>
+                        <span className="text-xs font-bold text-sky-400">{item.romaji}</span>
+                        {item.is_new && <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded font-mono">Chưa lưu</span>}
+                        {item.is_edited && <span className="text-[9px] font-bold text-sky-400 bg-sky-500/20 px-1.5 py-0.5 rounded font-mono">Đã sửa</span>}
+                      </div>
+                      <p className="text-[10px] text-slate-500 mt-1">{item.english}</p>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => handleStartEditVocab(item)} className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
