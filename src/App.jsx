@@ -11,7 +11,7 @@ import FlashcardsView from './components/FlashcardsView';
 import LeaderboardView from './components/LeaderboardView';
 import QuizModal from './components/QuizModal';
 import AdminView from './components/AdminView';
-import AuthModal from './components/AuthModal'; // <-- IMPORT COMPONENT AUTH
+import AuthModal from './components/AuthModal';
 
 function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
@@ -24,29 +24,64 @@ function App() {
   const [savingNotes, setSavingNotes] = useState(false);
   const [activeNotesTab, setActiveNotesTab] = useState('teacher');
   
-  // STATE POPUP & PHIÊN ĐĂNG NHẬP
+  // STATE POPUP, PHIÊN ĐĂNG NHẬP & ROLE NGƯỜI DÙNG
   const [isQuizOpen, setIsQuizOpen] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState('student'); // Mặc định là 'student'
 
   useEffect(() => {
     initAppData();
     checkUserSession();
   }, []);
 
-  // Lắng nghe phiên đăng nhập Supabase
+  // Lấy thông tin Role từ bảng profiles trên Supabase
+  const fetchUserRole = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (data && !error) {
+        setUserRole(data.role || 'student');
+      } else {
+        setUserRole('student');
+      }
+    } catch (err) {
+      console.error('Lỗi lấy role:', err.message);
+      setUserRole('student');
+    }
+  };
+
+  // Lắng nghe phiên đăng nhập Supabase real-time
   const checkUserSession = async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    setUser(session?.user ?? null);
+    if (session?.user) {
+      setUser(session.user);
+      fetchUserRole(session.user.id);
+    } else {
+      setUser(null);
+      setUserRole('student');
+    }
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      if (session?.user) {
+        setUser(session.user);
+        fetchUserRole(session.user.id);
+      } else {
+        setUser(null);
+        setUserRole('student');
+      }
     });
   };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    setUserRole('student');
+    if (currentTab === 'admin') setCurrentTab('dashboard');
     alert('Đã đăng xuất tài khoản.');
   };
 
@@ -123,6 +158,7 @@ function App() {
         currentTab={currentTab} 
         setCurrentTab={setCurrentTab} 
         user={user} 
+        userRole={userRole} // <-- TRUYỀN THÊM userRole SANG HEADER
         openAuthModal={() => setIsAuthOpen(true)}
         handleSignOut={handleSignOut}
       />
@@ -157,7 +193,8 @@ function App() {
             <LeaderboardView progressPercent={progressPercent} />
           )}
 
-          {currentTab === 'admin' && (
+          {/* CHỈ CHO PHÉP HIỂN THỊ ADMIN VIEW KHI USER LÀ ADMIN */}
+          {currentTab === 'admin' && userRole === 'admin' && (
             <AdminView 
               lessons={lessons} 
               kanjiDeck={kanjiDeck} 
@@ -183,7 +220,10 @@ function App() {
       <AuthModal 
         isOpen={isAuthOpen} 
         onClose={() => setIsAuthOpen(false)} 
-        onAuthSuccess={(loggedUser) => setUser(loggedUser)}
+        onAuthSuccess={(loggedUser) => {
+          setUser(loggedUser);
+          fetchUserRole(loggedUser.id);
+        }}
       />
 
     </div>
