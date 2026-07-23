@@ -3,7 +3,7 @@ import { supabase } from '../api/supabaseClient';
 import { X, Brain, Trophy, CheckCircle2, XCircle, RotateCcw, ArrowRight, Sparkles, Sliders } from 'lucide-react';
 import { speakJapanese } from '../utils/speech';
 
-function QuizModal({ isOpen, onClose }) {
+function QuizModal({ isOpen, onClose, user }) {
   const [step, setSetep] = useState('setup'); // 'setup', 'quiz', 'result'
   const [questions, setQuestions] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -18,23 +18,18 @@ function QuizModal({ isOpen, onClose }) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen) {
-      fetchRawQuestions();
-      setSetep('setup');
+    if (step === 'result' && user && score > 0) {
+      addEarnedXpToUser(score * 20);
     }
-  }, [isOpen]);
+  }, [step]);
 
-  // Fetch toàn bộ câu hỏi để làm bộ lọc
-  const fetchRawQuestions = async () => {
-    setLoading(true);
+  const addEarnedXpToUser = async (gainedXp) => {
     try {
-      const { data, error } = await supabase.from('questions').select('*');
-      if (error) throw error;
-      setQuestions(data || []);
+      const { data } = await supabase.from('profiles').select('xp').eq('id', user.id).single();
+      const currentXp = data?.xp || 0;
+      await supabase.from('profiles').update({ xp: currentXp + gainedXp }).eq('id', user.id);
     } catch (err) {
-      console.error('Lỗi tải câu hỏi:', err.message);
-    } finally {
-      setLoading(false);
+      console.error('Lỗi cộng XP:', err.message);
     }
   };
 
