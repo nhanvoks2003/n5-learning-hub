@@ -8,6 +8,7 @@ import DashboardView from './components/DashboardView';
 import LessonsView from './components/LessonsView';
 import FlashcardsView from './components/FlashcardsView';
 import LeaderboardView from './components/LeaderboardView';
+import GrammarView from './components/GrammarView'; // <-- 1. IMPORT COMPONENT NGỮ PHÁP
 import QuizModal from './components/QuizModal';
 import AdminView from './components/AdminView';
 import AuthModal from './components/AuthModal';
@@ -19,6 +20,7 @@ function App() {
   const [userNotesMap, setUserNotesMap] = useState({});       // Map lưu notes theo lesson_id
   const [kanjiDeck, setKanjiDeck] = useState([]);
   const [vocabList, setVocabList] = useState([]);
+  const [grammarList, setGrammarList] = useState([]);
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
@@ -103,6 +105,10 @@ function App() {
 
       const { data: vocabData } = await supabase.from('vocabularies').select('*').order('id', { ascending: true });
       setVocabList(vocabData || []);
+
+      // 2. TẢI DỮ LIỆU BẢNG NGỮ PHÁP
+      const { data: grammarData } = await supabase.from('grammar').select('*').order('id', { ascending: true });
+      setGrammarList(grammarData || []);
     } catch (error) {
       console.error('Lỗi API:', error.message);
     } finally {
@@ -234,15 +240,22 @@ function App() {
             <FlashcardsView kanjiDeck={kanjiDeck} vocabList={vocabList} />
           )}
 
+          {/* 3. HIỂN THỊ MÀN HÌNH NGỮ PHÁP */}
+          {currentTab === 'grammar' && (
+            <GrammarView grammarList={grammarList} />
+          )}
+
           {currentTab === 'leaderboard' && (
             <LeaderboardView progressPercent={progressPercent} />
           )}
 
+          {/* 4. TRUYỀN grammarList SANG ADMIN VIEW */}
           {currentTab === 'admin' && userRole === 'admin' && (
             <AdminView 
               lessons={lessons} 
               kanjiDeck={kanjiDeck} 
               vocabList={vocabList} 
+              grammarList={grammarList}
               refreshData={initAppData} 
             />
           )}

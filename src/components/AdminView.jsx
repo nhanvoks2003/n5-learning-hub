@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../api/supabaseClient';
-import { Plus, Trash2, Pencil, Layers, BookOpen, Sparkles, CheckCircle2, Save, Undo2, X } from 'lucide-react';
+import { Plus, Trash2, Pencil, Layers, BookOpen, Sparkles, BookMarked, CheckCircle2, Save, Undo2, X } from 'lucide-react';
 
-function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
-  const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'kanji', 'vocab'
+function AdminView({ lessons, kanjiDeck, vocabList, grammarList = [], refreshData }) {
+  const [activeTab, setActiveTab] = useState('lessons'); // 'lessons', 'kanji', 'vocab', 'grammar'
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -11,31 +11,36 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
   const [localLessons, setLocalLessons] = useState([]);
   const [localKanji, setLocalKanji] = useState([]);
   const [localVocab, setLocalVocab] = useState([]);
+  const [localGrammar, setLocalGrammar] = useState([]);
 
   // LƯU ĐANG CHỈNH SỬA MỤC NÀO
   const [editingLessonId, setEditingLessonId] = useState(null);
   const [editingKanjiId, setEditingKanjiId] = useState(null);
   const [editingVocabId, setEditingVocabId] = useState(null);
+  const [editingGrammarId, setEditingGrammarId] = useState(null);
 
   // Theo dõi các thay đổi chưa lưu (Insert, Delete, Update)
   const [pendingChanges, setPendingChanges] = useState({
     lessons: { insert: [], delete: [], update: [] },
     kanji: { insert: [], delete: [], update: [] },
     vocab: { insert: [], delete: [], update: [] },
+    grammar: { insert: [], delete: [], update: [] },
   });
 
   useEffect(() => {
     setLocalLessons(lessons || []);
     setLocalKanji(kanjiDeck || []);
     setLocalVocab(vocabList || []);
+    setLocalGrammar(grammarList || []);
     resetPendingChanges();
-  }, [lessons, kanjiDeck, vocabList]);
+  }, [lessons, kanjiDeck, vocabList, grammarList]);
 
   const resetPendingChanges = () => {
     setPendingChanges({
       lessons: { insert: [], delete: [], update: [] },
       kanji: { insert: [], delete: [], update: [] },
       vocab: { insert: [], delete: [], update: [] },
+      grammar: { insert: [], delete: [], update: [] },
     });
     handleCancelEdit();
   };
@@ -49,14 +54,17 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
   const [lessonForm, setLessonForm] = useState({ lesson_name: '', week: 'WEEK 1', description: '', youtube_embed_id: '' });
   const [kanjiForm, setKanjiForm] = useState({ char: '', trans: '', onyomi: '', level: 'LVL 1' });
   const [vocabForm, setVocabForm] = useState({ kanji: '', romaji: '', english: '', week: 'WEEK 1', stage: 'GROWING' });
+  const [grammarForm, setGrammarForm] = useState({ title: '', structure: '', explanation: '', example_ja: '', example_vi: '', week: 'WEEK 1' });
 
   const handleCancelEdit = () => {
     setEditingLessonId(null);
     setEditingKanjiId(null);
     setEditingVocabId(null);
+    setEditingGrammarId(null);
     setLessonForm({ lesson_name: '', week: 'WEEK 1', description: '', youtube_embed_id: '' });
     setKanjiForm({ char: '', trans: '', onyomi: '', level: 'LVL 1' });
     setVocabForm({ kanji: '', romaji: '', english: '', week: 'WEEK 1', stage: 'GROWING' });
+    setGrammarForm({ title: '', structure: '', explanation: '', example_ja: '', example_vi: '', week: 'WEEK 1' });
   };
 
   // ---------------- 1. XỬ LÝ BÀI HỌC (LESSONS) ----------------
@@ -285,11 +293,89 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
     });
   };
 
-  // ĐẾM TỔNG SỐ LẦN THAY ĐỔI
+  // ---------------- 4. XỬ LÝ NGỮ PHÁP (GRAMMAR) ----------------
+  const handleStartEditGrammar = (item) => {
+    setEditingGrammarId(item.id || item.temp_id);
+    setGrammarForm({
+      title: item.title,
+      structure: item.structure,
+      explanation: item.explanation || '',
+      example_ja: item.example_ja || '',
+      example_vi: item.example_vi || '',
+      week: item.week || 'WEEK 1',
+    });
+  };
+
+  const handleSaveGrammarForm = (e) => {
+    e.preventDefault();
+    if (!grammarForm.title || !grammarForm.structure) return;
+
+    if (editingGrammarId) {
+      const updatedList = localGrammar.map(g => {
+        if ((g.id && g.id === editingGrammarId) || (g.temp_id && g.temp_id === editingGrammarId)) {
+          return { ...g, ...grammarForm, is_edited: !g.is_new };
+        }
+        return g;
+      });
+      setLocalGrammar(updatedList);
+
+      const updatedItem = updatedList.find(g => (g.id === editingGrammarId || g.temp_id === editingGrammarId));
+
+      setPendingChanges(prev => {
+        if (updatedItem.is_new) {
+          return {
+            ...prev,
+            grammar: {
+              ...prev.grammar,
+              insert: prev.grammar.insert.map(i => i.temp_id === editingGrammarId ? updatedItem : i)
+            }
+          };
+        } else {
+          const existsInUpdate = prev.grammar.update.some(u => u.id === updatedItem.id);
+          const newUpdateArr = existsInUpdate
+            ? prev.grammar.update.map(u => u.id === updatedItem.id ? updatedItem : u)
+            : [...prev.grammar.update, updatedItem];
+          return { ...prev, grammar: { ...prev.grammar, update: newUpdateArr } };
+        }
+      });
+      handleCancelEdit();
+    } else {
+      const newItem = { ...grammarForm, temp_id: 'temp_' + Date.now(), is_new: true };
+      setLocalGrammar([newItem, ...localGrammar]);
+      setPendingChanges(prev => ({
+        ...prev,
+        grammar: { ...prev.grammar, insert: [newItem, ...prev.grammar.insert] }
+      }));
+      setGrammarForm({ title: '', structure: '', explanation: '', example_ja: '', example_vi: '', week: 'WEEK 1' });
+    }
+  };
+
+  const handleDeleteGrammar = (item) => {
+    setLocalGrammar(localGrammar.filter(g => (g.id ? g.id !== item.id : g.temp_id !== item.temp_id)));
+    if (editingGrammarId === (item.id || item.temp_id)) handleCancelEdit();
+
+    setPendingChanges(prev => {
+      if (item.is_new) {
+        return { ...prev, grammar: { ...prev.grammar, insert: prev.grammar.insert.filter(i => i.temp_id !== item.temp_id) } };
+      } else {
+        return {
+          ...prev,
+          grammar: {
+            ...prev.grammar,
+            update: prev.grammar.update.filter(u => u.id !== item.id),
+            delete: [...prev.grammar.delete, item.id]
+          }
+        };
+      }
+    });
+  };
+
+  // ĐẾM TỔNG SỐ LẦN THAY ĐỔI TRÊN CẢ 4 TAB
   const totalPendingCount =
     pendingChanges.lessons.insert.length + pendingChanges.lessons.delete.length + pendingChanges.lessons.update.length +
     pendingChanges.kanji.insert.length + pendingChanges.kanji.delete.length + pendingChanges.kanji.update.length +
-    pendingChanges.vocab.insert.length + pendingChanges.vocab.delete.length + pendingChanges.vocab.update.length;
+    pendingChanges.vocab.insert.length + pendingChanges.vocab.delete.length + pendingChanges.vocab.update.length +
+    pendingChanges.grammar.insert.length + pendingChanges.grammar.delete.length + pendingChanges.grammar.update.length;
 
   // LƯU HÀNG LOẠT VÀO SUPABASE
   const handleSaveChangesToSupabase = async () => {
@@ -301,6 +387,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
       if (pendingChanges.lessons.delete.length > 0) await supabase.from('lessons').delete().in('id', pendingChanges.lessons.delete);
       if (pendingChanges.kanji.delete.length > 0) await supabase.from('kanji').delete().in('id', pendingChanges.kanji.delete);
       if (pendingChanges.vocab.delete.length > 0) await supabase.from('vocabularies').delete().in('id', pendingChanges.vocab.delete);
+      if (pendingChanges.grammar.delete.length > 0) await supabase.from('grammar').delete().in('id', pendingChanges.grammar.delete);
 
       // 2. INSERT
       if (pendingChanges.lessons.insert.length > 0) {
@@ -315,6 +402,10 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
         const clean = pendingChanges.vocab.insert.map(({ temp_id, is_new, is_edited, ...rest }) => rest);
         await supabase.from('vocabularies').insert(clean);
       }
+      if (pendingChanges.grammar.insert.length > 0) {
+        const clean = pendingChanges.grammar.insert.map(({ temp_id, is_new, is_edited, ...rest }) => rest);
+        await supabase.from('grammar').insert(clean);
+      }
 
       // 3. UPDATE (UPSERT)
       if (pendingChanges.lessons.update.length > 0) {
@@ -328,6 +419,10 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
       if (pendingChanges.vocab.update.length > 0) {
         const clean = pendingChanges.vocab.update.map(({ temp_id, is_new, is_edited, ...rest }) => rest);
         await supabase.from('vocabularies').upsert(clean);
+      }
+      if (pendingChanges.grammar.update.length > 0) {
+        const clean = pendingChanges.grammar.update.map(({ temp_id, is_new, is_edited, ...rest }) => rest);
+        await supabase.from('grammar').upsert(clean);
       }
 
       showNotification(`Đã lưu thành công ${totalPendingCount} thay đổi lên Database! 🎉`);
@@ -344,6 +439,7 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
     setLocalLessons(lessons || []);
     setLocalKanji(kanjiDeck || []);
     setLocalVocab(vocabList || []);
+    setLocalGrammar(grammarList || []);
     resetPendingChanges();
     showNotification('Đã hủy các thay đổi chưa lưu.');
   };
@@ -391,24 +487,30 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
       )}
 
       {/* TABS */}
-      <div className="flex border-b border-white/10 gap-4 text-xs font-bold uppercase tracking-wider font-mono">
+      <div className="flex border-b border-white/10 gap-4 text-xs font-bold uppercase tracking-wider font-mono overflow-x-auto custom-scrollbar">
         <button 
           onClick={() => { setActiveTab('lessons'); handleCancelEdit(); }}
-          className={`pb-3 border-b-2 transition-all flex items-center gap-2 ${activeTab === 'lessons' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+          className={`pb-3 border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'lessons' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
         >
           <Layers className="w-4 h-4" /> Bài Học ({localLessons.length})
         </button>
         <button 
           onClick={() => { setActiveTab('kanji'); handleCancelEdit(); }}
-          className={`pb-3 border-b-2 transition-all flex items-center gap-2 ${activeTab === 'kanji' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+          className={`pb-3 border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'kanji' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
         >
           <Sparkles className="w-4 h-4" /> Chữ Kanji ({localKanji.length})
         </button>
         <button 
           onClick={() => { setActiveTab('vocab'); handleCancelEdit(); }}
-          className={`pb-3 border-b-2 transition-all flex items-center gap-2 ${activeTab === 'vocab' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+          className={`pb-3 border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'vocab' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
         >
           <BookOpen className="w-4 h-4" /> Từ Vựng ({localVocab.length})
+        </button>
+        <button 
+          onClick={() => { setActiveTab('grammar'); handleCancelEdit(); }}
+          className={`pb-3 border-b-2 transition-all flex items-center gap-2 shrink-0 ${activeTab === 'grammar' ? 'text-sky-400 border-sky-400 font-black' : 'text-slate-500 border-transparent hover:text-slate-300'}`}
+        >
+          <BookMarked className="w-4 h-4" /> Ngữ Pháp ({localGrammar.length})
         </button>
       </div>
 
@@ -690,6 +792,135 @@ function AdminView({ lessons, kanjiDeck, vocabList, refreshData }) {
                     <div className="flex items-center gap-1 shrink-0">
                       <button onClick={() => handleStartEditVocab(item)} className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors"><Pencil className="w-4 h-4" /></button>
                       <button onClick={() => handleDeleteVocab(item)} className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 className="w-4 h-4" /></button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ---------------- TAB 4: NGỮ PHÁP ---------------- */}
+      {activeTab === 'grammar' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          <div className="lg:col-span-5 bg-[#171f33]/40 border border-white/5 p-6 rounded-3xl shadow-xl h-fit space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-sm font-bold text-white uppercase font-mono tracking-wider">
+                {editingGrammarId ? '✏️ Cập Nhật Ngữ Pháp' : '➕ Thêm Ngữ Pháp Mới'}
+              </h3>
+              {editingGrammarId && (
+                <button onClick={handleCancelEdit} className="text-slate-400 hover:text-white text-xs flex items-center gap-1">
+                  <X className="w-3.5 h-3.5" /> Hủy sửa
+                </button>
+              )}
+            </div>
+
+            <form onSubmit={handleSaveGrammarForm} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Tên mẫu ngữ pháp (*)</label>
+                <input 
+                  type="text" required placeholder="VD: Cấu trúc khẳng định" 
+                  value={grammarForm.title} 
+                  onChange={e => setGrammarForm({...grammarForm, title: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Cấu trúc / Công thức (*)</label>
+                <input 
+                  type="text" required placeholder="VD: N1 は N2 です。" 
+                  value={grammarForm.structure} 
+                  onChange={e => setGrammarForm({...grammarForm, structure: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-sky-400 font-mono font-bold focus:outline-none focus:border-sky-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Giải thích cách dùng</label>
+                <textarea 
+                  rows="2" placeholder="Nhập ý nghĩa và hoàn cảnh sử dụng..." 
+                  value={grammarForm.explanation} 
+                  onChange={e => setGrammarForm({...grammarForm, explanation: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-sky-400 resize-none" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Câu ví dụ tiếng Nhật</label>
+                <input 
+                  type="text" placeholder="VD: わたしは ナン です。" 
+                  value={grammarForm.example_ja} 
+                  onChange={e => setGrammarForm({...grammarForm, example_ja: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-emerald-400 font-bold focus:outline-none focus:border-sky-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Dịch nghĩa câu ví dụ</label>
+                <input 
+                  type="text" placeholder="VD: Tôi là Nhân." 
+                  value={grammarForm.example_vi} 
+                  onChange={e => setGrammarForm({...grammarForm, example_vi: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-slate-300 focus:outline-none focus:border-sky-400" 
+                />
+              </div>
+              <div>
+                <label className="block text-slate-400 mb-1 font-mono">Phân loại Tuần (*)</label>
+                <input 
+                  type="text" required placeholder="VD: WEEK 1" 
+                  value={grammarForm.week} 
+                  onChange={e => setGrammarForm({...grammarForm, week: e.target.value})} 
+                  className="w-full bg-slate-900/60 border border-white/10 rounded-xl p-3 text-white font-mono focus:outline-none focus:border-sky-400" 
+                />
+              </div>
+              <button 
+                type="submit" 
+                className={`w-full py-3 font-black uppercase tracking-wider rounded-xl transition-all shadow-md active:scale-98 flex items-center justify-center gap-2 ${
+                  editingGrammarId ? 'bg-amber-400 text-[#0b1326]' : 'bg-sky-500 text-[#0b1326]'
+                }`}
+              >
+                {editingGrammarId ? <Pencil className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {editingGrammarId ? 'Lưu Thay Đổi (Tạm)' : 'Thêm Vào Danh Sách Tạm'}
+              </button>
+            </form>
+          </div>
+
+          <div className="lg:col-span-7 bg-[#171f33]/40 border border-white/5 rounded-3xl overflow-hidden shadow-xl">
+            <div className="p-4 border-b border-white/5 bg-slate-900/30 text-xs font-mono font-bold text-slate-400">
+              DANH SÁCH NGỮ PHÁP
+            </div>
+            <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto custom-scrollbar">
+              {localGrammar.map((item, idx) => {
+                const itemId = item.id || item.temp_id;
+                const isEditing = editingGrammarId === itemId;
+
+                return (
+                  <div key={itemId || idx} className={`p-4 flex items-center justify-between gap-4 transition-colors ${isEditing ? 'bg-amber-500/10 border-l-4 border-amber-400' : item.is_new ? 'bg-emerald-500/5 border-l-4 border-emerald-400' : item.is_edited ? 'bg-sky-500/5 border-l-4 border-sky-400' : 'hover:bg-white/5'}`}>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-mono font-bold text-sky-400 px-1.5 py-0.5 bg-sky-500/10 rounded">{item.week || 'WEEK 1'}</span>
+                        {item.is_new && <span className="text-[9px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded font-mono">Chưa lưu</span>}
+                        {item.is_edited && <span className="text-[9px] font-bold text-sky-400 bg-sky-500/20 px-1.5 py-0.5 rounded font-mono">Đã sửa</span>}
+                      </div>
+                      <h4 className="text-xs font-bold text-white mt-1">{item.title}</h4>
+                      <p className="text-xs font-mono text-sky-300 font-bold mt-0.5">{item.structure}</p>
+                    </div>
+
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        onClick={() => handleStartEditGrammar(item)} 
+                        className="p-2 text-slate-400 hover:text-amber-400 hover:bg-amber-400/10 rounded-lg transition-colors"
+                        title="Chỉnh sửa ngữ pháp"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteGrammar(item)} 
+                        className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Xóa ngữ pháp"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
                   </div>
                 );

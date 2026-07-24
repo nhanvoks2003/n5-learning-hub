@@ -53,6 +53,7 @@ function Header({ currentTab, setCurrentTab, user, userRole, openAuthModal, hand
       {/* MOBILE DROPDOWN MENU */}
       {mobileMenuOpen && (
         <div className="absolute top-full left-0 w-full bg-[#131b2e] border-b border-white/10 p-5 flex flex-col gap-4 shadow-2xl md:hidden animate-fade-in">
+          <button onClick={() => navTo('grammar')} className={`text-sm font-bold pb-1 transition-all ${currentTab === 'grammar' ? 'text-sky-400 border-b-2 border-sky-400' : 'text-slate-400 hover:text-slate-200'}`}>Ngữ Pháp N5</button>
           <button onClick={() => navTo('dashboard')} className="text-left text-xs font-bold text-slate-300 py-2 border-b border-white/5">Dashboard</button>
           <button onClick={() => navTo('lessons')} className="text-left text-xs font-bold text-slate-300 py-2 border-b border-white/5">Video Lessons & Course Tracker</button>
           <button onClick={() => navTo('flashcards')} className="text-left text-xs font-bold text-slate-300 py-2 border-b border-white/5">Kanji Mastery & Flashcards</button>
