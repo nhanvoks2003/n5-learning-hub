@@ -95,4 +95,4 @@ function Sidebar({ currentTab, setCurrentTab, progressPercent, handleSignOut }) 
   );
 }
 
-export default Sidebar;
+export default Sidebar; 
